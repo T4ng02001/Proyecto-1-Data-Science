@@ -41,36 +41,35 @@ def developer(desarrollador: str):
     # Se devuelve los datos en formato JSON
     return {"desarrollador": desarrollador, "datos": response_data}
 
-#3. UserForGenre(): Usuario con más horas jugadas para un género y horas acumuladas por año
+#4. best_developer_year(): Top 3 desarrolladores más recomendados por usuarios en un año
 
 df_games = pd.read_parquet("df_games.parquet")
-df_items = pd.read_parquet("df_items.parquet")
+df_reviews = pd.read_parquet("df_reviews_sentiment.parquet")
 
-@app.get("/userforgenre/{genero}")
-def user_for_genre(genero: str):
-    # Se filtra por género
-    genre_games = df_games[df_games['genres'].str.contains(genero, case=False, na=False)]
+@app.get("/bestdeveloper/{year}")
+def best_developer(year: int):
+    # Se convierte la columna 'release_date' en formato datetime para extraer el año
+    df_games['release_date'] = pd.to_datetime(df_games['release_date'], errors='coerce')
+    df_games['year'] = df_games['release_date'].dt.year
+
+    # Se filtra por el año proporcionado
+    games_in_year = df_games[df_games['year'] == year]
     
-    if genre_games.empty:
-        raise HTTPException(status_code=404, detail="Género no encontrado")
+    # Se verifica si hay datos para ese año
+    if games_in_year.empty:
+        return {"error": f"No se encontraron datos para el año {year}"}
     
-    # Se cambia de tipo de dato
-    genre_games['id'] = genre_games['id'].astype('int64') 
-    df_items['item_id'] = df_items['item_id'].astype('int64')
+    # Se agrupa  por desarrollador y contar la cantidad de juegos
+    developer_count = games_in_year.groupby('developer').size().reset_index(name='cantidad_juegos')
     
-    # Se une con df_items para obtener el tiempo de juego por usuario
-    merged_data = genre_games.merge(df_items, left_on='id', right_on='item_id', how='inner')
+    # Se ordena por la cantidad de juegos publicados y tomar los primeros 3 desarrolladores
+    top_developers = developer_count.sort_values(by='cantidad_juegos', ascending=False).head(3)
     
-    # Se encuentra el usuario con más horas jugadas
-    user_with_most_playtime = merged_data.groupby('user_id')['playtime_forever'].sum().idxmax()
+    # Se crea un diccionario para los resultados
+    ranking = {f"Puesto {i+1}": row['developer'] for i, row in top_developers.iterrows()}
     
-    # Horas acumuladas por año de lanzamiento
-    playtime_by_year = merged_data.groupby(merged_data['release_date'].dt.year)['playtime_forever'].sum().reset_index()
-    
-    return {
-        "Usuario con más horas jugadas para Género": user_with_most_playtime,
-        "Horas jugadas": playtime_by_year.to_dict(orient="records")
-    }
+    return ranking
+
 
 
 
