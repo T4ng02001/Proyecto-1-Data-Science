@@ -41,7 +41,29 @@ def developer(desarrollador: str):
     # Se devuelve los datos en formato JSON
     return {"desarrollador": desarrollador, "datos": response_data}
 
+#2. userdata(): Cantidad de dinero gastado, porcentaje de recomendación y cantidad de items por usuario
 
+df_games = pd.read_parquet("df_games.parquet")
+df_reviews = pd.read_parquet("df_reviews_sentiment.parquet")
+df_items = pd.read_parquet("df_items.parquet")
+
+@app.get("/userdata/{user_id}")
+def userdata(user_id: str):
+    # Se filtra los datos por usuario
+    user_items = df_items[df_items['user_id'] == user_id]
+    if user_items.empty:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    # Se calcula la cantidad de dinero gastado
+    total_spent = df_games[df_games['id'].isin(user_items['item_id'])]['price'].sum()
+    # Se calcula el porcentaje de recomendación
+    user_reviews = df_reviews[df_reviews['user_id'] == user_id]
+    recommendation_percentage = (user_reviews['recommend'].mean() * 100) if not user_reviews.empty else 0
+    return {
+        "Usuario": user_id,
+        "Dinero gastado": f"{total_spent} USD",
+        "% de recomendación": f"{recommendation_percentage}%",
+        "Cantidad de items": len(user_items)
+    }
 
 
 @app.get("/")
