@@ -9,8 +9,8 @@ app = FastAPI()
 
 # 1. developer(): Cantidad de items y porcentaje de contenido Free por año según desarrolladora
 
-df_games = pd.read_parquet("API/df_games.parquet")
-df_items = pd.read_parquet("API/df_items.parquet")
+df_games = pd.read_parquet("df_games.parquet")
+df_items = pd.read_parquet("df_items.parquet")
 
 
 @app.get("/developer/{desarrollador}")
@@ -46,9 +46,9 @@ def developer(desarrollador: str):
 
 #2. userdata(): Cantidad de dinero gastado, porcentaje de recomendación y cantidad de items por usuario
 
-df_games = pd.read_parquet("API/df_games.parquet")
-df_reviews = pd.read_parquet("API/df_reviews_sentiment.parquet")
-df_items = pd.read_parquet("API/df_items.parquet")
+df_games = pd.read_parquet("df_games.parquet")
+df_reviews = pd.read_parquet("df_reviews_sentiment.parquet")
+df_items = pd.read_parquet("df_items.parquet")
 
 @app.get("/userdata/{user_id}")
 def userdata(user_id: str):
@@ -70,8 +70,8 @@ def userdata(user_id: str):
 
 #3. UserForGenre(): Usuario con más horas jugadas para un género y horas acumuladas por año
 
-df_games = pd.read_parquet("API/df_games.parquet")
-df_items = pd.read_parquet("API/df_items.parquet")
+df_games = pd.read_parquet("df_games.parquet")
+df_items = pd.read_parquet("df_items.parquet")
 
 @app.get("/userforgenre/{genero}")
 def user_for_genre(genero: str):
@@ -102,8 +102,8 @@ def user_for_genre(genero: str):
 
 #4. best_developer_year(): Top 3 desarrolladores más recomendados por usuarios en un año
 
-df_games = pd.read_parquet("API/df_games.parquet")
-df_reviews = pd.read_parquet("API/df_reviews_sentiment.parquet")
+df_games = pd.read_parquet("df_games.parquet")
+df_reviews = pd.read_parquet("df_reviews_sentiment.parquet")
 
 @app.get("/bestdeveloper/{year}")
 def best_developer(year: int):
@@ -136,8 +136,8 @@ def best_developer(year: int):
 #5. developer_reviews_analysis(): Análisis de reseñas según desarrolladora (positivas vs negativas)
 
 # Cargar los DataFrames
-df_games = pd.read_parquet("API/df_games.parquet")
-df_reviews = pd.read_parquet("API/df_reviews_sentiment.parquet")
+df_games = pd.read_parquet("df_games.parquet")
+df_reviews = pd.read_parquet("df_reviews_sentiment.parquet")
 
 @app.get("/developerreviews/{developer_name}")
 def developer_reviews_analysis(developer_name: str):
