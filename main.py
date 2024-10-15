@@ -41,48 +41,6 @@ def developer(desarrollador: str):
     # Se devuelve los datos en formato JSON
     return {"desarrollador": desarrollador, "datos": response_data}
 
-#3. UserForGenre(): Usuario con más horas jugadas para un género y horas acumuladas por año
-
-df_games = pd.read_parquet("df_games.parquet")
-df_items = pd.read_parquet("df_items.parquet")
-
-@app.get("/userforgenre/{genero}")
-def user_for_genre(genero: str):
-    # Se filtra por género
-    genre_games = df_games[df_games['genres'].str.contains(genero, case=False, na=False)]
-    
-    if genre_games.empty:
-        raise HTTPException(status_code=404, detail="Género no encontrado")
-    
-    # Se cambia de tipo de dato
-    genre_games['id'] = genre_games['id'].astype('int64') 
-    df_items['item_id'] = df_items['item_id'].astype('int64')
-    
-    # Se une con df_items para obtener el tiempo de juego por usuario
-    merged_data = genre_games.merge(df_items, left_on='id', right_on='item_id', how='inner')
-    
-    # Se encuentra el usuario con más horas jugadas
-    user_with_most_playtime = merged_data.groupby('user_id')['playtime_forever'].sum().idxmax()
-    
-    # Horas acumuladas por año de lanzamiento
-    playtime_by_year = merged_data.groupby(merged_data['release_date'].dt.year)['playtime_forever'].sum().reset_index()
-    
-    return {
-        "Usuario con más horas jugadas para Género": user_with_most_playtime,
-        "Horas jugadas": playtime_by_year.to_dict(orient="records")
-    }
-
-
-
-
-
-
-
-
-
-
-
-
 
 #4. best_developer_year(): Top 3 desarrolladores más recomendados por usuarios en un año
 
@@ -112,29 +70,6 @@ def best_developer(year: int):
     ranking = {f"Puesto {i+1}": row['developer'] for i, row in top_developers.iterrows()}
     
     return ranking
-
-
-#5. developer_reviews_analysis(): Análisis de reseñas según desarrolladora (positivas vs negativas)
-
-# Cargar los DataFrames
-df_games = pd.read_parquet("df_games.parquet")
-df_reviews = pd.read_parquet("df_reviews_sentiment.parquet")
-
-@app.get("/developerreviews/{developer_name}")
-def developer_reviews_analysis(developer_name: str):
-    # Se filtra juegos por desarrollador
-    developer_games = df_games[df_games['developer'] == developer_name]
-    if developer_games.empty:
-        return {developer_name: "No se encontraron juegos para este desarrollador."}
-    # Se filtra reseñas por los juegos del desarrollador
-    reviews = df_reviews[df_reviews['item_id'].isin(developer_games['id'])]
-    # Contar reseñas positivas y negativas
-    positive_count = reviews[reviews['sentiment_analysis'] == 2].shape[0]
-    negative_count = reviews[reviews['sentiment_analysis'] == 0].shape[0]
-
-    return {developer_name: {"Negative": negative_count, "Positive": positive_count}}
-
-
 
 
 @app.get("/")
