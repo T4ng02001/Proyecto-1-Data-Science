@@ -154,26 +154,6 @@ def developer_reviews_analysis(developer_name: str):
     return {developer_name: {"Negative": negative_count, "Positive": positive_count}}
 
 
-#6. Función de sistema de recomendacion_user-item:
-# Cargar los datos y calcular similitudes
-df_combined = cargar_datos()
-items_pivot, user_similarity_df, item_similarity_df = calcular_similitud(df_combined)
-
-@app.get("/recomendacion_usuario")
-def recomendacion_usuario(user_id: str, n_recommendations: int = 5):
-    respuesta = user_item_similarity(user_id, items_pivot, user_similarity_df, n_recommendations)
-    return {"usuario": user_id, "recomendaciones": respuesta}
-
-
-#7. Función de  recomendacion_item-item:
-df_combined = cargar_datos()
-items_pivot, user_similarity_df, item_similarity_df = calcular_similitud(df_combined)
-
-@app.get("/recomendacion_juego/{item_id}")
-def recomendacion_juego(item_id: str, n_recommendations: int = 5):
-    recommended_games = item_item_similarity(item_id, items_pivot, item_similarity_df, n_recommendations)
-    return {"juego": item_id, "recomendaciones": recommended_games}
-
 
 
 @app.get("/")
