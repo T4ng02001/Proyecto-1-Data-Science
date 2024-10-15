@@ -71,6 +71,27 @@ def best_developer(year: int):
     return ranking
 
 
+#5. developer_reviews_analysis(): Análisis de reseñas según desarrolladora (positivas vs negativas)
+
+# Cargar los DataFrames
+df_games = pd.read_parquet("df_games.parquet")
+df_reviews = pd.read_parquet("df_reviews_sentiment.parquet")
+
+@app.get("/developerreviews/{developer_name}")
+def developer_reviews_analysis(developer_name: str):
+    # Se filtra juegos por desarrollador
+    developer_games = df_games[df_games['developer'] == developer_name]
+    if developer_games.empty:
+        return {developer_name: "No se encontraron juegos para este desarrollador."}
+    # Se filtra reseñas por los juegos del desarrollador
+    reviews = df_reviews[df_reviews['item_id'].isin(developer_games['id'])]
+    # Contar reseñas positivas y negativas
+    positive_count = reviews[reviews['sentiment_analysis'] == 2].shape[0]
+    negative_count = reviews[reviews['sentiment_analysis'] == 0].shape[0]
+
+    return {developer_name: {"Negative": negative_count, "Positive": positive_count}}
+
+
 
 
 @app.get("/")
