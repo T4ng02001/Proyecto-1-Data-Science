@@ -3,7 +3,6 @@
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from similitud import cargar_datos, calcular_similitud, user_item_similarity, item_item_similarity
 
 app = FastAPI()
 
