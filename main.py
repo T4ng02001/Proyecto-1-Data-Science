@@ -41,29 +41,37 @@ def developer(desarrollador: str):
     # Se devuelve los datos en formato JSON
     return {"desarrollador": desarrollador, "datos": response_data}
 
-#2. userdata(): Cantidad de dinero gastado, porcentaje de recomendación y cantidad de items por usuario
+#3. UserForGenre(): Usuario con más horas jugadas para un género y horas acumuladas por año
 
 df_games = pd.read_parquet("df_games.parquet")
-df_reviews = pd.read_parquet("df_reviews_sentiment.parquet")
 df_items = pd.read_parquet("df_items.parquet")
 
-@app.get("/userdata/{user_id}")
-def userdata(user_id: str):
-    # Se filtra los datos por usuario
-    user_items = df_items[df_items['user_id'] == user_id]
-    if user_items.empty:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    # Se calcula la cantidad de dinero gastado
-    total_spent = df_games[df_games['id'].isin(user_items['item_id'])]['price'].sum()
-    # Se calcula el porcentaje de recomendación
-    user_reviews = df_reviews[df_reviews['user_id'] == user_id]
-    recommendation_percentage = (user_reviews['recommend'].mean() * 100) if not user_reviews.empty else 0
+@app.get("/userforgenre/{genero}")
+def user_for_genre(genero: str):
+    # Se filtra por género
+    genre_games = df_games[df_games['genres'].str.contains(genero, case=False, na=False)]
+    
+    if genre_games.empty:
+        raise HTTPException(status_code=404, detail="Género no encontrado")
+    
+    # Se cambia de tipo de dato
+    genre_games['id'] = genre_games['id'].astype('int64') 
+    df_items['item_id'] = df_items['item_id'].astype('int64')
+    
+    # Se une con df_items para obtener el tiempo de juego por usuario
+    merged_data = genre_games.merge(df_items, left_on='id', right_on='item_id', how='inner')
+    
+    # Se encuentra el usuario con más horas jugadas
+    user_with_most_playtime = merged_data.groupby('user_id')['playtime_forever'].sum().idxmax()
+    
+    # Horas acumuladas por año de lanzamiento
+    playtime_by_year = merged_data.groupby(merged_data['release_date'].dt.year)['playtime_forever'].sum().reset_index()
+    
     return {
-        "Usuario": user_id,
-        "Dinero gastado": f"{total_spent} USD",
-        "% de recomendación": f"{recommendation_percentage}%",
-        "Cantidad de items": len(user_items)
+        "Usuario con más horas jugadas para Género": user_with_most_playtime,
+        "Horas jugadas": playtime_by_year.to_dict(orient="records")
     }
+
 
 
 @app.get("/")
